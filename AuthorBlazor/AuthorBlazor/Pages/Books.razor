@@ -1,0 +1,128 @@
+﻿@page "/Book"
+@using AuthorAPI.Data
+@using AuthorBlazor.Models
+@inject IBookService BookService
+@inject IAuthorService AuthorService
+@inject NavigationManager NavMgr
+
+<h3>Books</h3>
+<p>
+    Filter by Author: <input type="text" @oninput="@((arg) => FilterByAuthor(arg))" style="width: 50px"/> 
+</p>
+<p>
+    Filter by Title: <input type="text" @oninput="@((arg) => FilterByTitle(arg))" style="width: 50px"/> 
+</p>
+@if (authorsToShow == null)
+{
+    <p>
+        <em>Loading </em>
+    </p>
+}
+else if (!authorsToShow.Any())
+{
+    <p>
+        <em>No Book items exist.Please add some. </em>
+    </p>
+}
+else
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Title</th>
+            <th>PubYear</th>
+            <th>NumOfPages</th>
+            <th>AuthorFirstName</th>
+            <th>AuthorLastName</th>
+            <th>Delete</th>
+            <th>Edit</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        @foreach (var author in authorsToShow)
+        {
+            @if (author.Books != null && author.Books.Count != 0)
+            {
+                @foreach (var book in author.Books)
+                {
+                    <tr>
+                        <td>@book.Title</td>
+                        <td>@book.PublicationYear</td>
+                        <td>@book.NumOfPages</td>
+                        <td>@author.FirstName</td>
+                        <td>@author.LastName</td>
+                        <td><button @onclick="() => DeleteBook(book.ISBN)"><i class="oi oi=trash" style="color: red"/></button></td>
+                    </tr>
+                }
+            }
+        }
+        </tbody>
+    </table>
+}
+@code {
+    private IList<Author> authors;
+    private IList<Author> authorsToShow;
+
+    protected override async Task OnInitializedAsync()
+    {
+        authors= await AuthorService.GetAuthorsAsync();
+        authorsToShow = authors;
+    }
+    
+    private void FilterByAuthor(ChangeEventArgs changeEventArgs)
+    {
+        string filterByAuthor = null;
+        try
+        {
+            filterByAuthor = changeEventArgs.Value?.ToString();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+        if (filterByAuthor != null && !filterByAuthor.Equals(""))
+        {
+            authorsToShow = authors.Where(a => a.FirstName.Contains(filterByAuthor) || a.LastName.Contains(filterByAuthor)).ToList();
+        }
+        else
+        {
+            authorsToShow = authors;
+        }
+    }
+    
+    private void FilterByTitle(ChangeEventArgs changeEventArgs)
+    {
+        string filterByTitle = null;
+        try
+        {
+            filterByTitle = changeEventArgs.Value?.ToString();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+        if (filterByTitle != null && !filterByTitle.Equals(""))
+        {
+            authorsToShow = authors.Where(a => a.Books.Any(b => b.Title.Contains(filterByTitle))).ToList();
+        }
+        else
+        {
+            authorsToShow = authors;
+        }
+    }
+
+    public async Task DeleteBook(int bookId)
+    {
+        await BookService.RemoveBookAsync(bookId);
+        authors = await AuthorService.GetAuthorsAsync();
+        authorsToShow = authors;
+    }
+    
+    private void EditAdult(int bookId)
+    {
+        NavMgr.NavigateTo($"EditBook/{bookId}");
+    }
+}

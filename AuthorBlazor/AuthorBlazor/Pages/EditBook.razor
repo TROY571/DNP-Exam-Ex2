@@ -1,0 +1,58 @@
+﻿@page "/EditBook/{bookId:int}"
+@using AuthorAPI.Data
+@using AuthorBlazor.Models
+@using Microsoft.AspNetCore.Components
+@inject IBookService BookService
+@inject NavigationManager NavigationManager
+
+<h3>EditBook with ISBN: @bookId</h3>
+
+<EditForm Model="@bookToEdit" OnValidSubmit="@Save">
+    
+    <div class="form-group">
+        ISBN:<br/>
+        <InputNumber @bind-Value="bookToEdit.ISBN"/>
+    </div>
+    <div class="form-group">
+        Title:<br/>
+        <InputText @bind-Value="bookToEdit.Title"/>
+    </div>
+    <div class="form-group">
+        Publication Year:<br/>
+        <InputNumber @bind-Value="bookToEdit.PublicationYear"/>
+    </div>
+    <div class="form-group">
+        NumOfPages:<br/>
+        <InputNumber @bind-Value="bookToEdit.NumOfPages"/>
+    </div>
+    <div class="form-group">
+        Genre:<br/>
+        <InputText @bind-Value="bookToEdit.Genre"/>
+    </div>
+    <div class="form-group">
+        Author:<br/>
+        <InputNumber @bind-Value="bookToEdit.AuthorId"/>
+    </div>
+    <DataAnnotationsValidator/>
+        <ValidationSummary/>
+    <p class="actions">
+        <button class="btn btn-outline-dark" type="submit">Save</button>
+    </p>
+</EditForm>
+@code {
+    [Parameter]
+    public int bookId { get; set; }
+
+    private Book bookToEdit;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        bookToEdit = await BookService.GetBookByIsbnAsync(bookId);
+    }
+
+    private void Save()
+    {
+        BookService.UpdateBookAsync(bookToEdit);
+        NavigationManager.NavigateTo("/Book");
+    }
+}
